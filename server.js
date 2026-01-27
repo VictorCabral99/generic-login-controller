@@ -1,11 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-
-const authRoutes = require('./routes/auth.route');
-const userRoutes = require('./routes/user.route');
-
 const app = express();
 const port = 3000;
+
+const viewRoutes = require('./src/routes/view.route');
+const apiRoutes = require('./src/routes/api.route');
 
 app.set('view engine', 'ejs');
 app.set('views', './src/views');
@@ -23,8 +22,8 @@ app.get('/', (req, res) => {
 });
 
 // Rotas
-app.use('/', authRoutes);
-app.use('/', userRoutes);
+app.use('/', viewRoutes);
+app.use('/api', apiRoutes);
 
 app.use((req, res) => {
   res.status(404).render('layout', { page: 'not-found' });
