@@ -11,6 +11,9 @@ router.get('/dashboard', (req, res) => {
 router.get('/forgot-password', (req, res) => {
     res.render('layout', { page: 'forgot-password' });
 });
+router.get('/reset-password', (req, res) => {
+    res.render('layout', { page: 'reset-password' });
+});
 
 //User Views
 router.get('/users', (req, res) => {

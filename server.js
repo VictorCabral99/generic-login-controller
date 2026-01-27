@@ -1,3 +1,5 @@
+require('dotenv').config(); // Carregar variáveis de ambiente do .env
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
