@@ -78,5 +78,6 @@ module.exports = {
     criarUsuario,
     listarUsuarioPorId,
     atualizarUsuario,
-    deletarUsuario
+    deletarUsuario,
+    usuarios // Exportar o array para ser usado em outros controllers
 };

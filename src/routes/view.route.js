@@ -5,6 +5,9 @@ const router = express.Router();
 router.get('/login', (req, res) => {
     res.render('layout', { page: 'login' });
 });
+router.get('/dashboard', (req, res) => {
+    res.render('layout', { page: 'dashboard' });
+});
 router.get('/forgot-password', (req, res) => {
     res.render('layout', { page: 'forgot-password' });
 });

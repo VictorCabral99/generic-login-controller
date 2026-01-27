@@ -1,0 +1,93 @@
+<div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8">
+    
+    <!-- Título de Sucesso -->
+    <div class="text-center mb-8">
+      <div class="mb-4">
+        <svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-800">Você logou com sucesso! ✓</h1>
+      <p class="text-gray-500 text-sm mt-2">Bem-vindo à sua conta</p>
+    </div>
+
+    <!-- Informações do Usuário -->
+    <div class="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Dados da Sua Conta:</h2>
+      <div class="space-y-3">
+        <div>
+          <p class="text-sm text-gray-600">Username</p>
+          <p id="username" class="text-lg font-medium text-gray-800">Carregando...</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Email</p>
+          <p id="email" class="text-lg font-medium text-gray-800">Carregando...</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Permissões</p>
+          <p id="permissoes" class="text-lg font-medium text-gray-800">Carregando...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botão Logout -->
+    <button
+      onclick="logout()"
+      class="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+    >
+      Sair da Conta
+    </button>
+
+  </div>
+
+  <script>
+    // Executar quando a página carregar
+    window.addEventListener('DOMContentLoaded', function() {
+      carregarDadosUsuario();
+    });
+
+    function carregarDadosUsuario() {
+      // Pegar dados do localStorage
+      const usuarioJSON = localStorage.getItem('usuario');
+      const sessionId = localStorage.getItem('sessionId');
+
+      if (!usuarioJSON || !sessionId) {
+        alert('Sessão expirada! Faça login novamente.');
+        window.location.href = '/login';
+        return;
+      }
+
+      const usuario = JSON.parse(usuarioJSON);
+
+      // Preencher os dados na tela
+      document.getElementById('username').textContent = usuario.username;
+      document.getElementById('email').textContent = usuario.email;
+      document.getElementById('permissoes').textContent = usuario.permissoes.join(', ');
+    }
+
+    function logout() {
+      const sessionId = localStorage.getItem('sessionId');
+
+      // Fazer chamada para logout na API
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ sessionId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Limpar localStorage
+        localStorage.removeItem('usuario');
+        localStorage.removeItem('sessionId');
+
+        // Redirecionar para login
+        window.location.href = '/login';
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao fazer logout!');
+      });
+    }
+  </script>

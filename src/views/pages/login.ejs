@@ -6,8 +6,13 @@
       <p class="text-gray-500 text-sm mt-1">Faça login para continuar</p>
     </div>
 
+    <!-- Alerta de Erro -->
+    <div id="erro" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-5 hidden">
+      <p id="mensagemErro"></p>
+    </div>
+
     <!-- Formulário -->
-    <form class="space-y-5">
+    <form id="formularioLogin" class="space-y-5">
 
       <!-- Email -->
       <div>
@@ -15,8 +20,10 @@
           Email
         </label>
         <input
+          id="email"
           type="email"
           placeholder="seu@email.com"
+          required
           class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
@@ -27,8 +34,10 @@
           Senha
         </label>
         <input
+          id="senha"
           type="password"
           placeholder="••••••••"
+          required
           class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
@@ -53,4 +62,59 @@
       </button>
 
     </form>
+
   </div>
+
+  <script>
+    // Capturar envio do formulário
+    document.getElementById('formularioLogin').addEventListener('submit', function(event) {
+      event.preventDefault(); // Não fazer recarga da página
+
+      // Pegar os valores dos inputs
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+
+      // Fazer requisição POST para a API
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, senha })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Se houve erro na resposta
+        if (data.erro) {
+          mostrarErro(data.erro);
+          return;
+        }
+
+        // Se login foi bem sucedido
+        if (data.sessionId && data.usuario) {
+          // Armazenar dados no localStorage
+          localStorage.setItem('sessionId', data.sessionId);
+          localStorage.setItem('usuario', JSON.stringify(data.usuario));
+
+          // Redirecionar para o dashboard
+          window.location.href = '/dashboard';
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        mostrarErro('Erro ao fazer login! Tente novamente.');
+      });
+    });
+
+    function mostrarErro(mensagem) {
+      const erroDiv = document.getElementById('erro');
+      const mensagemErro = document.getElementById('mensagemErro');
+      mensagemErro.textContent = mensagem;
+      erroDiv.classList.remove('hidden');
+
+      // Desaparecer o erro após 5 segundos
+      setTimeout(() => {
+        erroDiv.classList.add('hidden');
+      }, 5000);
+    }
+  </script>
