@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const authRoutes = require('./routes/auth.route');
+const userRoutes = require('./routes/user.route');
 
 const app = express();
 const port = 3000;
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 
 // Rotas
 app.use('/', authRoutes);
+app.use('/', userRoutes);
 
 app.use((req, res) => {
   res.status(404).render('layout', { page: 'not-found' });
