@@ -1,14 +1,11 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 
-// Importar o array de usuários do user controller
-const { usuarios } = require('./user.controller');
+// Importar db e usuários do user controller
+const { db } = require('./user.controller');
 
 // Simulando sessões
 let usuariosAutenticados = {};
-
-// Armazenar tokens de reset de senha (em produção usar banco de dados)
-let tokensReset = {};
 
 // Configuração do Nodemailer (Gmail com suporte TLS)
 const transporter = nodemailer.createTransport({
@@ -39,53 +36,63 @@ function gerarToken() {
            Math.random().toString(36).substring(2, 15);
 }
 
-const login = (req, res) => {
-    const { email, senha } = req.body;
+const login = async (req, res) => {
+    try {
+        const { email, senha } = req.body;
 
-    // Validação 1: Verificar se email e senha foram enviados
-    if (!email || !senha) {
-        return res.status(400).json({ 
-            erro: 'Email e senha são obrigatórios' 
-        });
-    }
-
-    // Validação 2: Buscar o usuário no array de usuários
-    const usuarioEncontrado = usuarios.find(u => u.email === email);
-
-    // Validação 3: Verificar se o usuário existe
-    if (!usuarioEncontrado) {
-        return res.status(401).json({ 
-            erro: 'Email ou senha incorretos' 
-        });
-    }
-
-    // Validação 4: Verificar se a senha está correta
-    if (usuarioEncontrado.senha !== senha) {
-        return res.status(401).json({ 
-            erro: 'Email ou senha incorretos' 
-        });
-    }
-
-    // Sucesso: Criar sessão/token
-    const sessionId = `session_${Date.now()}`;
-    usuariosAutenticados[sessionId] = {
-        id: usuarioEncontrado.id,
-        email: usuarioEncontrado.email,
-        username: usuarioEncontrado.username,
-        timestamp: Date.now()
-    };
-
-    // Retornar dados do usuário autenticado (SEM a senha!)
-    res.status(200).json({ 
-        mensagem: 'Login realizado com sucesso',
-        sessionId,
-        usuario: {
-            id: usuarioEncontrado.id,
-            username: usuarioEncontrado.username,
-            email: usuarioEncontrado.email,
-            permissoes: usuarioEncontrado.permissoes
+        // Validação 1: Verificar se email e senha foram enviados
+        if (!email || !senha) {
+            return res.status(400).json({ 
+                erro: 'Email e senha são obrigatórios' 
+            });
         }
-    });
+
+        // Validação 2: Buscar o usuário no Firebase
+        const usuariosSnapshot = await db.collection('usuarios')
+            .where('email', '==', email)
+            .get();
+
+        // Validação 3: Verificar se o usuário existe
+        if (usuariosSnapshot.empty) {
+            return res.status(401).json({ 
+                erro: 'Email ou senha incorretos' 
+            });
+        }
+
+        const usuarioDoc = usuariosSnapshot.docs[0];
+        const usuarioEncontrado = usuarioDoc.data();
+
+        // Validação 4: Verificar se a senha está correta
+        if (usuarioEncontrado.senha !== senha) {
+            return res.status(401).json({ 
+                erro: 'Email ou senha incorretos' 
+            });
+        }
+
+        // Sucesso: Criar sessão/token
+        const sessionId = `session_${Date.now()}`;
+        usuariosAutenticados[sessionId] = {
+            id: usuarioDoc.id,
+            email: usuarioEncontrado.email,
+            username: usuarioEncontrado.username,
+            timestamp: Date.now()
+        };
+
+        // Retornar dados do usuário autenticado (SEM a senha!)
+        res.status(200).json({ 
+            mensagem: 'Login realizado com sucesso',
+            sessionId,
+            usuario: {
+                id: usuarioDoc.id,
+                username: usuarioEncontrado.username,
+                email: usuarioEncontrado.email,
+                permissoes: usuarioEncontrado.permissoes
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao fazer login:', error);
+        res.status(500).json({ erro: 'Erro ao fazer login' });
+    }
 };
 
 const logout = (req, res) => {
@@ -118,42 +125,49 @@ const forgotPassword = async (req, res) => {
 
     console.log('📨 Solicitação de reset recebida para:', email);
 
-    // Validação 1: Verificar se email foi enviado
-    if (!email) {
-        return res.status(400).json({ 
-            erro: 'Email é obrigatório' 
-        });
-    }
-
-    // Validação 2: Verificar se email existe no array de usuários
-    const usuarioEncontrado = usuarios.find(u => u.email === email);
-    if (!usuarioEncontrado) {
-        console.log('❌ Usuário não encontrado:', email);
-        return res.status(404).json({ 
-            erro: 'Usuário não encontrado com este email' 
-        });
-    }
-
-    // Gerar token único
-    const token = gerarToken();
-    
-    // Armazenar token com informações de expiração (1 hora = 3600000 ms)
-    const tempoExpiracao = Date.now() + (60 * 60 * 1000); // 1 hora
-    
-    tokensReset[token] = {
-        email: email,
-        usuarioId: usuarioEncontrado.id,
-        expiresAt: tempoExpiracao
-    };
-
-    // Link para reset de senha
-    const linkReset = `http://localhost:3000/reset-password?token=${token}`;
-
-    console.log('🔑 Token gerado:', token);
-    console.log('🔗 Link de reset:', linkReset);
-
-    // Enviar email real
     try {
+        // Validação 1: Verificar se email foi enviado
+        if (!email) {
+            return res.status(400).json({ 
+                erro: 'Email é obrigatório' 
+            });
+        }
+
+        // Validação 2: Verificar se email existe no Firebase
+        const usuariosSnapshot = await db.collection('usuarios')
+            .where('email', '==', email)
+            .get();
+
+        if (usuariosSnapshot.empty) {
+            console.log('❌ Usuário não encontrado:', email);
+            return res.status(404).json({ 
+                erro: 'Usuário não encontrado com este email' 
+            });
+        }
+
+        const usuarioDoc = usuariosSnapshot.docs[0];
+        const usuarioEncontrado = usuarioDoc.data();
+
+        // Gerar token único
+        const token = gerarToken();
+        
+        // Armazenar token com informações de expiração (1 hora = 3600000 ms)
+        const tempoExpiracao = Date.now() + (60 * 60 * 1000); // 1 hora
+        
+        // Armazenar token no Firebase
+        await db.collection('tokensReset').doc(token).set({
+            email: email,
+            usuarioId: usuarioDoc.id,
+            expiresAt: tempoExpiracao
+        });
+
+        // Link para reset de senha
+        const linkReset = `http://localhost:3000/reset-password?token=${token}`;
+
+        console.log('🔑 Token gerado:', token);
+        console.log('🔗 Link de reset:', linkReset);
+
+        // Enviar email real
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
@@ -215,50 +229,52 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-const resetPassword = (req, res) => {
-    const { token, novaSenha } = req.body;
+const resetPassword = async (req, res) => {
+    try {
+        const { token, novaSenha } = req.body;
 
-    // Validação 1: Verificar se token e nova senha foram enviados
-    if (!token || !novaSenha) {
-        return res.status(400).json({ 
-            erro: 'Token e nova senha são obrigatórios' 
+        // Validação 1: Verificar se token e nova senha foram enviados
+        if (!token || !novaSenha) {
+            return res.status(400).json({ 
+                erro: 'Token e nova senha são obrigatórios' 
+            });
+        }
+
+        // Validação 2: Buscar token no Firebase
+        const tokenDoc = await db.collection('tokensReset').doc(token).get();
+
+        if (!tokenDoc.exists) {
+            return res.status(400).json({ 
+                erro: 'Token inválido ou expirado' 
+            });
+        }
+
+        const tokenData = tokenDoc.data();
+
+        // Validação 3: Verificar se token expirou
+        if (Date.now() > tokenData.expiresAt) {
+            await db.collection('tokensReset').doc(token).delete();
+            return res.status(400).json({ 
+                erro: 'Token expirado! Solicite um novo reset de senha' 
+            });
+        }
+
+        // Validação 4: Encontrar e atualizar o usuário
+        await db.collection('usuarios')
+            .doc(tokenData.usuarioId)
+            .update({ senha: novaSenha });
+
+        // Deletar o token após o uso (consumido)
+        await db.collection('tokensReset').doc(token).delete();
+
+        res.status(200).json({ 
+            mensagem: 'Senha resetada com sucesso!',
+            info: 'Você pode fazer login com sua nova senha'
         });
+    } catch (error) {
+        console.error('Erro ao resetar senha:', error);
+        res.status(500).json({ erro: 'Erro ao resetar senha' });
     }
-
-    // Validação 2: Verificar se token existe
-    if (!tokensReset[token]) {
-        return res.status(400).json({ 
-            erro: 'Token inválido ou expirado' 
-        });
-    }
-
-    // Validação 3: Verificar se token expirou
-    const tokenData = tokensReset[token];
-    if (Date.now() > tokenData.expiresAt) {
-        delete tokensReset[token]; // Deletar token expirado
-        return res.status(400).json({ 
-            erro: 'Token expirado! Solicite um novo reset de senha' 
-        });
-    }
-
-    // Validação 4: Encontrar o usuário pelo ID armazenado no token
-    const usuario = usuarios.find(u => u.id === tokenData.usuarioId);
-    if (!usuario) {
-        return res.status(404).json({ 
-            erro: 'Usuário não encontrado' 
-        });
-    }
-
-    // Atualizar a senha do usuário
-    usuario.senha = novaSenha;
-
-    // Deletar o token após o uso (consumido)
-    delete tokensReset[token];
-
-    res.status(200).json({ 
-        mensagem: 'Senha resetada com sucesso!',
-        info: 'Você pode fazer login com sua nova senha'
-    });
 };
 
 module.exports = {

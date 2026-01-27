@@ -1,76 +1,161 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../../firebase-config');
 
-// Array para armazenar usuários (em produção usar banco de dados)
-let usuarios = [];
 let idContador = 1;
 
-const listarUsuarios = (req, res) => {
-    res.json({ usuarios });
+// Listar todos os usuários
+const listarUsuarios = async (req, res) => {
+    try {
+        const snapshot = await db.collection('usuarios').get();
+        const usuarios = [];
+        
+        snapshot.forEach(doc => {
+            usuarios.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        res.json({ usuarios });
+    } catch (error) {
+        console.error('Erro ao listar usuários:', error);
+        res.status(500).json({ erro: 'Erro ao buscar usuários' });
+    }
 };
 
-const criarUsuario = (req, res) => {
-    const { username, email, senha, permissoes = [] } = req.body;
+// Criar novo usuário
+const criarUsuario = async (req, res) => {
+    try {
+        const { username, email, senha, permissoes = [] } = req.body;
 
-    // Validar dados
-    if (!username || !email || !senha) {
-        return res.status(400).json({ erro: 'Username, email e senha são obrigatórios' });
+        // Validar dados
+        if (!username || !email || !senha) {
+            return res.status(400).json({ 
+                erro: 'Username, email e senha são obrigatórios' 
+            });
+        }
+
+        // Verificar se email já existe
+        const usuarioExistente = await db.collection('usuarios')
+            .where('email', '==', email)
+            .get();
+
+        if (!usuarioExistente.empty) {
+            return res.status(400).json({ 
+                erro: 'Email já cadastrado' 
+            });
+        }
+
+        // Criar novo usuário
+        const novoUsuario = {
+            username,
+            email,
+            senha,
+            permissoes,
+            criadoEm: new Date()
+        };
+
+        const docRef = await db.collection('usuarios').add(novoUsuario);
+
+        res.status(201).json({ 
+            mensagem: 'Usuário criado com sucesso', 
+            usuario: {
+                id: docRef.id,
+                ...novoUsuario
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao criar usuário:', error);
+        res.status(500).json({ erro: 'Erro ao criar usuário' });
     }
-
-    // Verificar se email já existe
-    const usuarioExistente = usuarios.find(u => u.email === email);
-    if (usuarioExistente) {
-        return res.status(400).json({ erro: 'Email já cadastrado' });
-    }
-
-    // Criar novo usuário
-    const novoUsuario = {
-        id: idContador++,
-        username,
-        email,
-        senha, // Em produção, usar bcrypt para hash
-        permissoes
-    };
-
-    usuarios.push(novoUsuario);
-    res.status(201).json({ mensagem: 'Usuário criado com sucesso', usuario: novoUsuario });
 };
 
-const listarUsuarioPorId = (req, res) => {
-    const usuario = usuarios.find(u => u.id === parseInt(req.params.id));
-    
-    if (!usuario) {
-        return res.status(404).json({ erro: 'Usuário não encontrado' });
-    }
+// Listar usuário por ID
+const listarUsuarioPorId = async (req, res) => {
+    try {
+        const doc = await db.collection('usuarios').doc(req.params.id).get();
 
-    res.json({ usuario });
+        if (!doc.exists) {
+            return res.status(404).json({ 
+                erro: 'Usuário não encontrado' 
+            });
+        }
+
+        res.json({ 
+            usuario: {
+                id: doc.id,
+                ...doc.data()
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+        res.status(500).json({ erro: 'Erro ao buscar usuário' });
+    }
 };
 
-const atualizarUsuario = (req, res) => {
-    const { username, email, senha, permissoes } = req.body;
-    const usuario = usuarios.find(u => u.id === parseInt(req.params.id));
+// Atualizar usuário
+const atualizarUsuario = async (req, res) => {
+    try {
+        const { username, email, senha, permissoes } = req.body;
+        const usuarioRef = db.collection('usuarios').doc(req.params.id);
 
-    if (!usuario) {
-        return res.status(404).json({ erro: 'Usuário não encontrado' });
+        const doc = await usuarioRef.get();
+        if (!doc.exists) {
+            return res.status(404).json({ 
+                erro: 'Usuário não encontrado' 
+            });
+        }
+
+        // Preparar dados para atualização
+        const atualizacoes = {};
+        if (username) atualizacoes.username = username;
+        if (email) atualizacoes.email = email;
+        if (senha) atualizacoes.senha = senha;
+        if (permissoes) atualizacoes.permissoes = permissoes;
+        atualizacoes.atualizadoEm = new Date();
+
+        await usuarioRef.update(atualizacoes);
+
+        const usuarioAtualizado = await usuarioRef.get();
+        res.json({ 
+            mensagem: 'Usuário atualizado com sucesso', 
+            usuario: {
+                id: usuarioAtualizado.id,
+                ...usuarioAtualizado.data()
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        res.status(500).json({ erro: 'Erro ao atualizar usuário' });
     }
-
-    if (username) usuario.username = username;
-    if (email) usuario.email = email;
-    if (senha) usuario.senha = senha;
-    if (permissoes) usuario.permissoes = permissoes;
-
-    res.json({ mensagem: 'Usuário atualizado com sucesso', usuario });
 };
 
-const deletarUsuario = (req, res) => {
-    const index = usuarios.findIndex(u => u.id === parseInt(req.params.id));
+// Deletar usuário
+const deletarUsuario = async (req, res) => {
+    try {
+        const usuarioRef = db.collection('usuarios').doc(req.params.id);
+        const doc = await usuarioRef.get();
 
-    if (index === -1) {
-        return res.status(404).json({ erro: 'Usuário não encontrado' });
+        if (!doc.exists) {
+            return res.status(404).json({ 
+                erro: 'Usuário não encontrado' 
+            });
+        }
+
+        await usuarioRef.delete();
+
+        res.json({ 
+            mensagem: 'Usuário deletado com sucesso',
+            usuario: {
+                id: doc.id,
+                ...doc.data()
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao deletar usuário:', error);
+        res.status(500).json({ erro: 'Erro ao deletar usuário' });
     }
-
-    const usuarioDeletado = usuarios.splice(index, 1);
-    res.json({ mensagem: 'Usuário deletado com sucesso', usuario: usuarioDeletado[0] });
 };
 
 module.exports = {
@@ -79,5 +164,5 @@ module.exports = {
     listarUsuarioPorId,
     atualizarUsuario,
     deletarUsuario,
-    usuarios // Exportar o array para ser usado em outros controllers
+    db
 };
