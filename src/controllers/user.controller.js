@@ -10,11 +10,11 @@ const listarUsuarios = (req, res) => {
 };
 
 const criarUsuario = (req, res) => {
-    const { email, senha } = req.body;
+    const { username, email, senha, permissoes = [] } = req.body;
 
     // Validar dados
-    if (!email || !senha) {
-        return res.status(400).json({ erro: 'Email e senha são obrigatórios' });
+    if (!username || !email || !senha) {
+        return res.status(400).json({ erro: 'Username, email e senha são obrigatórios' });
     }
 
     // Verificar se email já existe
@@ -26,8 +26,10 @@ const criarUsuario = (req, res) => {
     // Criar novo usuário
     const novoUsuario = {
         id: idContador++,
+        username,
         email,
-        senha // Em produção, usar bcrypt para hash
+        senha, // Em produção, usar bcrypt para hash
+        permissoes
     };
 
     usuarios.push(novoUsuario);
@@ -45,15 +47,17 @@ const listarUsuarioPorId = (req, res) => {
 };
 
 const atualizarUsuario = (req, res) => {
-    const { email, senha } = req.body;
+    const { username, email, senha, permissoes } = req.body;
     const usuario = usuarios.find(u => u.id === parseInt(req.params.id));
 
     if (!usuario) {
         return res.status(404).json({ erro: 'Usuário não encontrado' });
     }
 
+    if (username) usuario.username = username;
     if (email) usuario.email = email;
     if (senha) usuario.senha = senha;
+    if (permissoes) usuario.permissoes = permissoes;
 
     res.json({ mensagem: 'Usuário atualizado com sucesso', usuario });
 };
