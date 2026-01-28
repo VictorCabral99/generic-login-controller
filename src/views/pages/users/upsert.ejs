@@ -1,0 +1,96 @@
+<div class="max-w-3xl mx-auto px-6 py-8">
+
+    <!-- Header -->
+    <div class="mb-6">
+        <!-- 
+        CREATE: id = null
+        UPDATE: id != null
+      -->
+        <h1 class="text-2xl font-bold text-gray-800">
+            Criar Usuário
+            <!-- Editar Usuário -->
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            Preencha os dados abaixo
+        </p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white rounded-lg shadow p-6">
+
+        <form class="space-y-6">
+
+            <!-- Nome -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Nome
+                </label>
+                <input type="text" placeholder="Nome completo"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                </label>
+                <input type="email" placeholder="email@exemplo.com"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <!-- Senha (somente visual, no update geralmente opcional) -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Senha
+                </label>
+                <input type="password" placeholder="********"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <p class="text-xs text-gray-500 mt-1">
+                    Deixe em branco para manter a senha atual (edição)
+                </p>
+            </div>
+
+            <!-- Perfil / Role -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Perfil
+                </label>
+                <select
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>Selecione um perfil</option>
+                    <option>Administrador</option>
+                    <option>Usuário</option>
+                    <option>Leitor</option>
+                </select>
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                </label>
+                <select
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>Ativo</option>
+                    <option>Inativo</option>
+                </select>
+            </div>
+
+            <!-- Ações -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t">
+                <button type="button"
+                    class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100">
+                    Cancelar
+                </button>
+
+                <!-- CREATE -->
+                <button type="submit" class="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium">
+                    Salvar
+                    <!-- Atualizar -->
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>

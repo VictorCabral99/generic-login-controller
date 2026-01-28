@@ -20,7 +20,10 @@ router.get('/users', (req, res) => {
     res.render('layout', { page: 'users/list' });
 });
 router.get('/users/create', (req, res) => {
-    res.render('layout', { page: 'users/create' });
+    res.render('layout', { page: 'users/upsert', id: null });
+});
+router.get('/users/edit/:id', (req, res) => {
+    res.render('layout', { page: 'users/upsert', id: req.params.id });
 });
 
 //Permission Views
@@ -28,6 +31,9 @@ router.get('/permissions', (req, res) => {
     res.render('layout', { page: 'permissions/list' });
 });
 router.get('/permissions/create', (req, res) => {
-    res.render('layout', { page: 'permissions/create' });
+    res.render('layout', { page: 'permissions/upsert', id: null });
+});
+router.get('/permissions/edit/:id', (req, res) => {
+    res.render('layout', { page: 'permissions/upsert', id: req.params.id });
 });
 module.exports = router;
