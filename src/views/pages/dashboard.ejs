@@ -62,7 +62,7 @@
       // Preencher os dados na tela
       document.getElementById('username').textContent = usuario.username;
       document.getElementById('email').textContent = usuario.email;
-      document.getElementById('permissoes').textContent = usuario.permissoes.join(', ');
+      document.getElementById('permissoes').textContent = usuario.permissoes?.length > 0 ? usuario.permissoes.join(', ') : 'Nenhuma permissão';
     }
 
     function logout() {

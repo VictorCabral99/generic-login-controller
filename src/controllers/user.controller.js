@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../firebase-config');
 
-let idContador = 1;
-
 // Listar todos os usuários
 const listarUsuarios = async (req, res) => {
     try {
@@ -163,6 +161,5 @@ module.exports = {
     criarUsuario,
     listarUsuarioPorId,
     atualizarUsuario,
-    deletarUsuario,
-    db
+    deletarUsuario
 };

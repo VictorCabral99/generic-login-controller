@@ -2,7 +2,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 
 // Importar db e usuários do user controller
-const { db } = require('./user.controller');
+const db = require('../../firebase-config');
 
 // Simulando sessões
 let usuariosAutenticados = {};
