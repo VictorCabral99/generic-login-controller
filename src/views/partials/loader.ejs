@@ -1,0 +1,21 @@
+<!-- Overlay -->
+<div id="loading-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
+  <div class="flex flex-col items-center gap-4">
+    <!-- Spinner -->
+    <div class="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+
+    <!-- Texto -->
+    <span class="text-white text-sm font-medium">
+      Carregando...
+    </span>
+  </div>
+</div>
+<script>
+  function showLoading() {
+    document.getElementById("loading-overlay").classList.remove("hidden");
+  }
+
+  function hideLoading() {
+    document.getElementById("loading-overlay").classList.add("hidden");
+  }
+</script>
